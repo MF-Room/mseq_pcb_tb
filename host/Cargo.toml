@@ -5,5 +5,8 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.102"
-mseq = "2.2.4"
+crc = "3"
+midir = "0.11.0"
 rand = "0.10.1"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
