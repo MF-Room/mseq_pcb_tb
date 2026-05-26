@@ -31,7 +31,7 @@ fn main() -> ! {
     let mut cp = cortex_m::Peripherals::take().unwrap();
 
     let rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.sysclk(SYSCLK_MHZ.MHz()).freeze();
+    let clocks = rcc.cfgr.use_hse(25.MHz()).sysclk(SYSCLK_MHZ.MHz()).freeze();
 
     cp.DCB.enable_trace();
     cp.DWT.enable_cycle_counter();
