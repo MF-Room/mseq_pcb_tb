@@ -1,0 +1,11 @@
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+rustflags = [
+  "-C", "linker=flip-link",
+  "-C", "link-arg=-Tlink.x",
+]
+runner = "probe-rs run --chip STM32F413CHUx"
+
+[build]
+target = "thumbv7em-none-eabihf"
+
+[env]

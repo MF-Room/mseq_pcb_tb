@@ -1,0 +1,20 @@
+[package]
+name = "firmware"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cortex-m         = { version = "0.7", features = ["critical-section-single-core"] }
+cortex-m-rt      = "0.7"
+stm32f4xx-hal    = { version = "0.22.1", features = ["stm32f413"] }
+embedded-hal-nb  = "1.0.0"
+nb               = "1"
+rtt-target       = "0.6.1"
+panic-rtt-target = "0.2.0"
+log              = { version = "0.4", default-features = false }
+crc              = { version = "3", default-features = false }
+
+[profile.release]
+opt-level = "s"
+lto       = true
+codegen-units = 1
