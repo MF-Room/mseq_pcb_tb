@@ -4,10 +4,11 @@
 mod rtt_logger;
 
 use cortex_m::peripheral::DWT;
-use crc::{Crc, CRC_32_ISO_HDLC};
+use crc::{CRC_32_ISO_HDLC, Crc};
 use embedded_hal_nb::serial::Read;
 use log::{info, trace};
 use panic_rtt_target as _;
+use rtt_logger::{LOG_LEVEL, RttLogger};
 use stm32f4xx_hal::{
     pac,
     prelude::*,
@@ -18,13 +19,11 @@ const SYSCLK_MHZ: u32 = 84;
 const WATCHDOG_CYCLES: u32 = SYSCLK_MHZ * 1_000 * 2_000;
 
 static CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
-static mut LOGGER: rtt_logger::RttLogger = rtt_logger::RttLogger {
-    level: log::LevelFilter::Off,
-};
+static LOGGER: rtt_logger::RttLogger = RttLogger::new(LOG_LEVEL);
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
-    unsafe { (*core::ptr::addr_of_mut!(LOGGER)).init(log::LevelFilter::Trace) };
+    LOGGER.init();
     info!("MIDI testbench ready — waiting for bytes...");
 
     let dp = pac::Peripherals::take().unwrap();
