@@ -13,7 +13,6 @@ FW_PID=""
 HOST_PID=""
 
 cleanup() {
-    pkill -f "probe-rs run --chip STM32F413CHUx" 2>/dev/null || true
     [[ -n "$FW_PID" ]]   && kill "$FW_PID"   2>/dev/null || true
     [[ -n "$HOST_PID" ]] && kill "$HOST_PID" 2>/dev/null || true
     [[ -n "$FW_PID" ]]   && wait "$FW_PID"   2>/dev/null || true

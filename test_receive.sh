@@ -10,7 +10,6 @@ FW_OUT=$(mktemp /tmp/fw_out.XXXXXX)
 FW_PID=""
 
 cleanup() {
-    pkill -f "probe-rs run --chip STM32F413CHUx" 2>/dev/null || true
     [[ -n "$FW_PID" ]] && kill "$FW_PID" 2>/dev/null || true
     [[ -n "$FW_PID" ]] && wait "$FW_PID" 2>/dev/null || true
     rm -f "$FW_OUT"
