@@ -24,7 +24,20 @@ const INTERVAL_CYCLES: u32 = SYSCLK_MHZ * 1_000 * 5; // 5 ms between messages
 #[cfg(send_mode)]
 const SEED: u64 = 42;
 #[cfg(send_mode)]
-const MESSAGE_COUNT: u32 = 100;
+const fn parse_u32(s: &[u8]) -> u32 {
+    let mut n: u32 = 0;
+    let mut i = 0;
+    while i < s.len() {
+        n = n * 10 + (s[i] - b'0') as u32;
+        i += 1;
+    }
+    n
+}
+#[cfg(send_mode)]
+const MESSAGE_COUNT: u32 = match option_env!("COUNT") {
+    Some(s) => parse_u32(s.as_bytes()),
+    None => 1000,
+};
 
 static CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 static LOGGER: rtt_logger::RttLogger = RttLogger::new(LOG_LEVEL);
@@ -88,9 +101,8 @@ fn main() -> ! {
         }
 
         info!("{:#010X}", digest.finalize());
-        loop {
-            //cortex_m::asm::wfi();
-        }
+        cortex_m::asm::bkpt();
+        loop { cortex_m::asm::wfi(); }
     }
 
     #[cfg(not(send_mode))]
@@ -104,25 +116,35 @@ fn main() -> ! {
         let mut digest = CRC32.digest();
         let mut byte_count: u32 = 0;
         let mut last_rx: Option<u32> = None;
+        let mut sysex_active = false;
 
         loop {
             match rx.read() {
                 Ok(byte) => {
-                    if byte_count == 0 {
-                        debug!("Receiving");
+                    if byte >= 0xF8 {
+                        // System Real-Time (clock, active sensing, reset): ignore
+                    } else if byte == 0xF0 {
+                        sysex_active = true;
+                    } else if byte == 0xF7 {
+                        sysex_active = false;
+                    } else if byte >= 0xF1 {
+                        // Other System Common (MTC, song position, tune): ignore
+                    } else if !sysex_active {
+                        if byte_count == 0 {
+                            debug!("Receiving");
+                        }
+                        digest.update(&[byte]);
+                        byte_count += 1;
+                        last_rx = Some(DWT::cycle_count());
+                        trace!("byte {}: {:#04X}", byte_count, byte);
                     }
-                    digest.update(&[byte]);
-                    byte_count += 1;
-                    last_rx = Some(DWT::cycle_count());
-                    trace!("byte {}: {:#04X}", byte_count, byte);
                 }
                 Err(nb::Error::WouldBlock) => {
                     if let Some(t) = last_rx {
                         if DWT::cycle_count().wrapping_sub(t) >= WATCHDOG_CYCLES {
-                            info!("{:#010X}", digest.finalize());
-                            digest = CRC32.digest();
-                            byte_count = 0;
-                            last_rx = None;
+                            info!("{:#010X} ({} bytes)", digest.finalize(), byte_count);
+                            cortex_m::asm::bkpt();
+                            loop { cortex_m::asm::wfi(); }
                         }
                     }
                 }

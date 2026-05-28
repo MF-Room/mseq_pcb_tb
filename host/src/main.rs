@@ -1,6 +1,7 @@
 mod config;
 mod utils;
-use anyhow::{Result, bail};
+use anyhow::Result;
+use clap::{Parser, Subcommand};
 use config::Config;
 use crc::{CRC_32_ISO_HDLC, Crc};
 use midir::{MidiInput, MidiInputPort, MidiOutput, MidiOutputConnection};
@@ -12,36 +13,60 @@ use utils::{port_by_index, random_midi_message, select_port};
 
 const CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
+#[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Send MIDI messages and print the CRC32 of sent bytes
+    Send {
+        /// Number of messages to send
+        #[arg(long)]
+        count: u32,
+        /// MIDI output port index (overrides config)
+        #[arg(long)]
+        port: Option<usize>,
+    },
+    /// Receive MIDI messages and print the CRC32 of received bytes
+    Receive {
+        /// MIDI input port index (overrides config)
+        #[arg(long)]
+        port: Option<usize>,
+    },
+}
+
 fn main() -> Result<()> {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    let sending = args.contains(&"--send".to_string());
-    let receiving = args.contains(&"--receive".to_string());
-    if sending == receiving {
-        bail!("Pass exactly one of --send or --receive");
-    }
+    let cli = Cli::parse();
+    let mut cfg: Config = toml::from_str(&std::fs::read_to_string("config.toml")?)?;
 
-    let cfg: Config = toml::from_str(&std::fs::read_to_string("config.toml")?)?;
-
-    let crc = if sending {
-        let midi_out = MidiOutput::new("host output")?;
-        let out_port = match cfg.midi_port {
-            Some(idx) => port_by_index(&midi_out, idx)?,
-            None => select_port(&midi_out, "output")?,
-        };
-        let mut conn_out = midi_out.connect(&out_port, "output connection")?;
-        send_messages(
-            &mut SmallRng::seed_from_u64(cfg.seed),
-            &mut conn_out,
-            cfg.message_count,
-            cfg.interval_ms,
-        )
-    } else {
-        let midi_in = MidiInput::new("host input")?;
-        let in_port = match cfg.midi_port {
-            Some(idx) => port_by_index(&midi_in, idx)?,
-            None => select_port(&midi_in, "input")?,
-        };
-        receive_messages(midi_in, &in_port, cfg.watchdog_ms)?
+    let crc = match cli.command {
+        Command::Send { count, port } => {
+            if let Some(p) = port { cfg.midi_port = Some(p); }
+            let midi_out = MidiOutput::new("host output")?;
+            let out_port = match cfg.midi_port {
+                Some(idx) => port_by_index(&midi_out, idx)?,
+                None => select_port(&midi_out, "output")?,
+            };
+            let mut conn_out = midi_out.connect(&out_port, "output connection")?;
+            send_messages(
+                &mut SmallRng::seed_from_u64(cfg.seed),
+                &mut conn_out,
+                count,
+                cfg.interval_ms,
+            )
+        }
+        Command::Receive { port } => {
+            if let Some(p) = port { cfg.midi_port = Some(p); }
+            let midi_in = MidiInput::new("host input")?;
+            let in_port = match cfg.midi_port {
+                Some(idx) => port_by_index(&midi_in, idx)?,
+                None => select_port(&midi_in, "input")?,
+            };
+            receive_messages(midi_in, &in_port, cfg.watchdog_ms)?
+        }
     };
 
     println!("CRC32: {:#010X}", crc);
