@@ -7,13 +7,12 @@ const fn parse_log_level(s: &[u8]) -> LevelFilter {
         b"info" => LevelFilter::Info,
         b"debug" => LevelFilter::Debug,
         b"trace" => LevelFilter::Trace,
-        _ => LevelFilter::Warn,
+        _ => LevelFilter::Info,
     }
 }
-
 pub const LOG_LEVEL: LevelFilter = match option_env!("LOG_LEVEL") {
     Some(s) => parse_log_level(s.as_bytes()),
-    None => LevelFilter::Warn,
+    None => LevelFilter::Info,
 };
 
 pub struct RttLogger {

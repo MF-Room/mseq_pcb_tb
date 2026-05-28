@@ -2,4 +2,4 @@ seed          = 42
 message_count = 100
 interval_ms   = 5
 # midi_port    = 0      # comment out to be prompted interactively
-watchdog_ms  = 2000   # receiver exits after this many ms with no message
+watchdog_ms  = 10000   # receiver exits after this many ms with no message

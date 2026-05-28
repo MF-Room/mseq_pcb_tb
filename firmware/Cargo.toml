@@ -9,6 +9,7 @@ cortex-m-rt      = "0.7"
 stm32f4xx-hal    = { version = "0.22.1", features = ["stm32f413"] }
 embedded-hal-nb  = "1.0.0"
 nb               = "1"
+rand             = { version = "0.10", default-features = false }
 rtt-target       = "0.6.1"
 panic-rtt-target = "0.2.0"
 log              = { version = "0.4", default-features = false }

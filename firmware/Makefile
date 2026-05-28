@@ -10,7 +10,7 @@ rtt:
 	cargo run -r
 
 build:
-	cargo build -r
+	MODE=send cargo build -r
 
 gdb_server:
 	$(MAKE) flash_debug
