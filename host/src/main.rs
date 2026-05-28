@@ -44,7 +44,9 @@ fn main() -> Result<()> {
 
     let crc = match cli.command {
         Command::Send { count, port } => {
-            if let Some(p) = port { cfg.midi_port = Some(p); }
+            if let Some(p) = port {
+                cfg.midi_port = Some(p);
+            }
             let midi_out = MidiOutput::new("host output")?;
             let out_port = match cfg.midi_port {
                 Some(idx) => port_by_index(&midi_out, idx)?,
@@ -59,7 +61,9 @@ fn main() -> Result<()> {
             )
         }
         Command::Receive { port } => {
-            if let Some(p) = port { cfg.midi_port = Some(p); }
+            if let Some(p) = port {
+                cfg.midi_port = Some(p);
+            }
             let midi_in = MidiInput::new("host input")?;
             let in_port = match cfg.midi_port {
                 Some(idx) => port_by_index(&midi_in, idx)?,

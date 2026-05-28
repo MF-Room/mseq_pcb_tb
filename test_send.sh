@@ -35,7 +35,7 @@ echo "=== Flashing and attaching RTT (send mode) ==="
 cd "$REPO/firmware"
 COUNT=$COUNT MODE=send probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
-    > >(tee "$FW_OUT") 2>&1 &
+    > "$FW_OUT" 2>/dev/null &
 FW_PID=$!
 
 echo "=== Waiting for MCU to finish sending and probe-rs to exit ==="

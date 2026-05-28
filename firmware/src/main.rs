@@ -144,7 +144,9 @@ fn main() -> ! {
                         if DWT::cycle_count().wrapping_sub(t) >= WATCHDOG_CYCLES {
                             info!("{:#010X} ({} bytes)", digest.finalize(), byte_count);
                             cortex_m::asm::bkpt();
-                            loop { cortex_m::asm::wfi(); }
+                            loop {
+                                cortex_m::asm::wfi();
+                            }
                         }
                     }
                 }

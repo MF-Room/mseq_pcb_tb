@@ -17,15 +17,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "=== Building firmware (receive mode, debug logging) ==="
+echo "=== Building firmware (receive mode) ==="
 cd "$REPO/firmware"
-LOG_LEVEL=info cargo build --release
+LOG_LEVEL=info cargo build --release 2>&1
 
-echo "=== Flashing and attaching RTT (debug output shown below) ==="
-# probe-rs run exits on its own when the MCU hits bkpt(); tee keeps output visible
+echo "=== Flashing firmware ==="
+# probe-rs run exits on its own when the MCU hits bkpt()
 LOG_LEVEL=info probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
-    > >(tee "$FW_OUT") 2>&1 &
+    > "$FW_OUT" 2>/dev/null &
 FW_PID=$!
 sleep 8   # covers flash + probe init
 
