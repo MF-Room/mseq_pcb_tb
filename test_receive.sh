@@ -30,7 +30,7 @@ sleep 8   # covers flash + probe init
 
 echo ""
 echo "=== Sending MIDI messages (port $PORT, count $COUNT) ==="
-cd "$REPO/host"
+cd "$REPO/midi-tester"
 HOST_CRC=$(cargo run -- send --count "$COUNT" --port "$PORT" 2>/dev/null | grep -oE '0x[0-9A-Fa-f]{8}' || true)
 
 echo "=== Waiting for MCU watchdog to fire and probe-rs to exit ==="

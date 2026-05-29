@@ -4,7 +4,7 @@
 
 Automated tests for the MIDI I/O paths on the MSeq PCB (STM32F413CHU6).
 
-The firmware runs on the target and the host crate drives a USB-MIDI adapter. Both sides compute a CRC32 over the transferred bytes and the scripts compare them.
+The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter from the host machine. Both sides compute a CRC32 over the transferred bytes and the scripts compare them.
 
 ## Requirements
 

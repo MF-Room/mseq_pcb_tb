@@ -26,7 +26,7 @@ cd "$REPO/firmware"
 COUNT=$COUNT MODE=send cargo build --release
 
 echo "=== Starting host receiver (port $PORT) ==="
-cd "$REPO/host"
+cd "$REPO/midi-tester"
 cargo run -- receive --port "$PORT" > "$HOST_OUT" 2>&1 &
 HOST_PID=$!
 
