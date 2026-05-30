@@ -1,11 +1,15 @@
 #![no_std]
 #![no_main]
 
-#[cfg(bpm_mode)] mod bpm;
-#[cfg(display_mode)] mod display;
-#[cfg(not(any(bpm_mode, display_mode, send_mode)))] mod receive;
+#[cfg(bpm_mode)]
+mod bpm;
+#[cfg(display_mode)]
+mod display;
+#[cfg(not(any(bpm_mode, display_mode, send_mode)))]
+mod receive;
 mod rtt_logger;
-#[cfg(send_mode)] mod send;
+#[cfg(send_mode)]
+mod send;
 
 use panic_rtt_target as _;
 use rtt_logger::{LOG_LEVEL, RttLogger};
