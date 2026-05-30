@@ -22,7 +22,7 @@ pub fn run(rtc_periph: pac::RTC, mut pwr: pac::PWR, rcc: &mut Rcc) -> ! {
         rtc.clear_interrupt(Event::Wakeup);
 
         tick += 1;
-        if tick % 24 == 0 {
+        if tick.is_multiple_of(24) {
             beat += 1;
             info!("BEAT {}", beat);
             if beat >= BEATS {

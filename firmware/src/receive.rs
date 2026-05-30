@@ -61,13 +61,13 @@ pub fn run(usart1: pac::USART1, gpioa: pac::GPIOA, gpiob: pac::GPIOB, rcc: &mut 
                 }
             }
             Err(nb::Error::WouldBlock) => {
-                if let Some(t) = last_rx {
-                    if DWT::cycle_count().wrapping_sub(t) >= WATCHDOG_CYCLES {
-                        info!("{:#010X} ({} bytes)", digest.finalize(), byte_count);
-                        cortex_m::asm::bkpt();
-                        loop {
-                            cortex_m::asm::wfi();
-                        }
+                if let Some(t) = last_rx
+                    && DWT::cycle_count().wrapping_sub(t) >= WATCHDOG_CYCLES
+                {
+                    info!("{:#010X} ({} bytes)", digest.finalize(), byte_count);
+                    cortex_m::asm::bkpt();
+                    loop {
+                        cortex_m::asm::wfi();
                     }
                 }
             }
