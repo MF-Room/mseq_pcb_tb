@@ -21,3 +21,27 @@ jobs:
           workspaces: midi-tester
       - run: cargo fmt --check
       - run: cargo clippy -- -D warnings
+
+  firmware:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firmware
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: firmware
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+        name: clippy (receive)
+      - run: MODE=send cargo clippy -- -D warnings
+        name: clippy (send)
+      - run: MODE=display cargo clippy -- -D warnings
+        name: clippy (display)
+      - run: MODE=bpm cargo clippy -- -D warnings
+        name: clippy (bpm)
