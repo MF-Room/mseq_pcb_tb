@@ -6,14 +6,17 @@ edition = "2024"
 [dependencies]
 cortex-m             = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt      = "0.7"
-stm32f4xx-hal    = { version = "0.22.1", features = ["stm32f413"] }
+stm32f4xx-hal    = { version = "0.23", features = ["stm32f413"] }
 embedded-hal-nb  = "1.0.0"
-nb               = "1"
+nb               = "1.1.0"
 rand             = { version = "0.10", default-features = false }
-rtt-target       = "0.6.1"
+rtt-target       = "0.6.2"
 panic-rtt-target = "0.2.0"
 log              = { version = "0.4", default-features = false }
 crc              = { version = "3", default-features = false }
+fugit            = "0.3"
+lcd-lcm1602-i2c  = "0.3.0"
+heapless         = "0.9"
 
 [profile.release]
 opt-level = "s"

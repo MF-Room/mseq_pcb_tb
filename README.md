@@ -1,10 +1,11 @@
 # MSeq PCB Testbench
 
 [![CI](https://github.com/MF-Room/mseq_pcb_tb/actions/workflows/ci.yml/badge.svg)](https://github.com/MF-Room/mseq_pcb_tb/actions/workflows/ci.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Automated tests for the MIDI I/O paths on the MSeq PCB (STM32F413CHU6).
+Automated tests for the MSeq PCB (STM32F413CHU6).
 
-The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter from the host machine. Both sides compute a CRC32 over the transferred bytes and the scripts compare them.
+The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter from the host machine.
 
 ## Requirements
 
@@ -24,4 +25,16 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 
 ```
 ./test_send.sh
+```
+
+**Display test**: the MCU generates a random number and shows it on the LCD. The user reads it and types it in the terminal. PASS if it matches.
+
+```
+./test_display.sh
+```
+
+**BPM test**: the MCU generates 50 beats at 120 BPM using the LSE/RTC. The host measures elapsed wall-clock time and checks the result is within 0.5 BPM of the target.
+
+```
+./test_bpm.sh
 ```
