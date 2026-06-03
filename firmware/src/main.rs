@@ -15,7 +15,7 @@ use panic_rtt_target as _;
 use rtt_logger::{LOG_LEVEL, RttLogger};
 use stm32f4xx_hal::{pac, prelude::*, rcc};
 
-pub const SYSCLK_MHZ: u32 = 84;
+pub const SYSCLK_MHZ: u32 = 100;
 
 static LOGGER: RttLogger = RttLogger::new(LOG_LEVEL);
 
