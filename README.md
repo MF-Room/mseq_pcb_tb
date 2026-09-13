@@ -12,6 +12,7 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 - STLink connected to the target
 - USB-MIDI adapter connected to the host
 - `probe-rs`, `cargo`, and `flip-link` installed
+- For the USB flashing test: USB-C cable to the board and `stm32flash` installed
 
 ## Tests
 
@@ -50,4 +51,22 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 
 ```
 ./test_fram.sh
+```
+
+**THRU test**: the host sends 1000 MIDI messages on output port 0 into MIDI IN 1, the PCB copies them in hardware to MIDI THRU, and the host receives them on input port 1. Both CRCs are compared. Connect the adapter input to MIDI THRU instead of MIDI OUT. The receive firmware is flashed first so the MCU pin on the IN 1 line is an input. Set `OUT_PORT=<n>` / `IN_PORT=<n>` to use other host ports.
+
+```
+./test_thru.sh
+```
+
+**Master/slave switch test** (SW3 on PA1): the MCU logs the switch level, the user flips the switch and flips it back within 30 s each, and the MCU checks both changes.
+
+```
+./test_switch.sh
+```
+
+**USB flashing test** (CP2102N on USART1, BOOT and RESET buttons): the user enters the STM32 bootloader (hold BOOT, press RESET, release BOOT), then `stm32flash` writes and verifies the receive firmware over USB without the STLink. PASS if the STM32F413 is detected and the verify succeeds. Set `SERIAL=<device>` if the board is not `/dev/ttyUSB0`.
+
+```
+./test_usb_flash.sh
 ```

@@ -51,3 +51,5 @@ jobs:
         name: clippy (nor)
       - run: MODE=fram cargo clippy -- -D warnings
         name: clippy (fram)
+      - run: MODE=switch cargo clippy -- -D warnings
+        name: clippy (switch)

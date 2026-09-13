@@ -11,7 +11,7 @@ mod fram;
 mod nor;
 #[cfg(any(
     receive2_mode,
-    not(any(bpm_mode, display_mode, send_mode, nor_mode, fram_mode))
+    not(any(bpm_mode, display_mode, send_mode, nor_mode, fram_mode, switch_mode))
 ))]
 mod receive;
 mod rtt_logger;
@@ -19,6 +19,8 @@ mod rtt_logger;
 mod send;
 #[cfg(any(nor_mode, fram_mode))]
 mod spi_bus;
+#[cfg(switch_mode)]
+mod switch;
 
 use panic_rtt_target as _;
 use rtt_logger::{LOG_LEVEL, RttLogger};
@@ -60,6 +62,17 @@ fn main() -> ! {
     #[cfg(receive2_mode)]
     receive::run_in2(dp.USART2, dp.GPIOA, &mut rcc);
 
-    #[cfg(not(any(bpm_mode, display_mode, send_mode, nor_mode, fram_mode, receive2_mode)))]
+    #[cfg(switch_mode)]
+    switch::run(dp.GPIOA, &mut rcc);
+
+    #[cfg(not(any(
+        bpm_mode,
+        display_mode,
+        send_mode,
+        nor_mode,
+        fram_mode,
+        receive2_mode,
+        switch_mode
+    )))]
     receive::run(dp.USART1, dp.GPIOA, dp.GPIOB, &mut rcc);
 }

@@ -11,6 +11,7 @@ fn main() {
     println!("cargo::rustc-check-cfg=cfg(bpm_mode)");
     println!("cargo::rustc-check-cfg=cfg(nor_mode)");
     println!("cargo::rustc-check-cfg=cfg(fram_mode)");
+    println!("cargo::rustc-check-cfg=cfg(switch_mode)");
     if std::env::var("MODE").as_deref() == Ok("receive2") {
         println!("cargo:rustc-cfg=receive2_mode");
     }
@@ -28,5 +29,8 @@ fn main() {
     }
     if std::env::var("MODE").as_deref() == Ok("fram") {
         println!("cargo:rustc-cfg=fram_mode");
+    }
+    if std::env::var("MODE").as_deref() == Ok("switch") {
+        println!("cargo:rustc-cfg=switch_mode");
     }
 }
