@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 # Tests MCU receive path: host sends COUNT MIDI messages on port PORT, MCU receives,
 # both compute CRC32-ISO/HDLC. Prints PASS if they match.
+# Usage: ./test_receive.sh [1|2]   MIDI input under test (default 1). PORT=<n> overrides the host port.
 set -euo pipefail
 COUNT=3000
-PORT=0
+PORT=${PORT:-0}
+INPUT=${1:-1}
+
+case "$INPUT" in
+    1) MODE="" ;;
+    2) MODE="receive2" ;;
+    *) echo "Usage: $0 [1|2]"; exit 2 ;;
+esac
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FW_OUT=$(mktemp /tmp/fw_out.XXXXXX)
@@ -16,9 +24,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "=== Building firmware (receive mode) ==="
+echo "=== Building firmware (receive mode, MIDI IN $INPUT) ==="
 cd "$REPO/firmware"
-LOG_LEVEL=info cargo build --release 2>&1
+MODE=$MODE LOG_LEVEL=info cargo build --release 2>&1
 
 echo "=== Flashing firmware ==="
 # probe-rs run exits on its own when the MCU hits bkpt()

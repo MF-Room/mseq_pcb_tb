@@ -15,10 +15,11 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 
 ## Tests
 
-**Receive test** (RX path): the host sends 3000 MIDI messages on port 0, the MCU receives them and computes a CRC32. Both CRCs are compared.
+**Receive test** (RX path): the host sends 3000 MIDI messages on port 0, the MCU receives them and computes a CRC32. Both CRCs are compared. The argument selects the input under test: `1` for MIDI IN 1 (USART1, PB3, default), `2` for MIDI IN 2 (USART2, PA3). Connect the adapter output to that input; set `PORT=<n>` to use another host port.
 
 ```
-./test_receive.sh
+./test_receive.sh      # MIDI IN 1
+./test_receive.sh 2    # MIDI IN 2
 ```
 
 **Send test** (TX path): the MCU sends 1000 MIDI messages, the host receives them on port 1 and computes a CRC32. Both CRCs are compared. This test is expected to fail due to a hardware issue on the PCB TX path.
@@ -37,4 +38,16 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 
 ```
 ./test_bpm.sh
+```
+
+**NOR flash test** (W25Q16JV on SPI2, CS on PB12): the MCU checks the JEDEC ID, erases the last 4 KB sector, checks it is blank, programs a pseudo-random pattern and reads it back. Destructive: the sector content is lost. No USB-MIDI adapter needed.
+
+```
+./test_nor.sh
+```
+
+**FRAM test** (MB85RS256B on SPI2, CS on PB10): the MCU checks the write enable latch toggles, writes a pseudo-random pattern over the whole 32 KB and reads it back, checks every address line for aliasing, and checks a write without write enable is ignored. Destructive: the whole memory is overwritten. No USB-MIDI adapter needed.
+
+```
+./test_fram.sh
 ```

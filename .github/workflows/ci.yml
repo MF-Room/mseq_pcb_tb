@@ -39,9 +39,15 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy -- -D warnings
         name: clippy (receive)
+      - run: MODE=receive2 cargo clippy -- -D warnings
+        name: clippy (receive2)
       - run: MODE=send cargo clippy -- -D warnings
         name: clippy (send)
       - run: MODE=display cargo clippy -- -D warnings
         name: clippy (display)
       - run: MODE=bpm cargo clippy -- -D warnings
         name: clippy (bpm)
+      - run: MODE=nor cargo clippy -- -D warnings
+        name: clippy (nor)
+      - run: MODE=fram cargo clippy -- -D warnings
+        name: clippy (fram)
