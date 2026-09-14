@@ -20,7 +20,7 @@ MODE=nor cargo build --release
 
 echo "=== Flashing firmware ==="
 # probe-rs run exits when the MCU hits bkpt(); the timeout covers a panic, which never does
-timeout 60 probe-rs run --chip STM32F413CHUx \
+"$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!

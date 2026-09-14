@@ -24,13 +24,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "=== Building firmware (receive mode, MIDI IN $INPUT) ==="
+echo "=== Building firmware (receive mode, MIDI IN $INPUT) and midi-tester ==="
 cd "$REPO/firmware"
 MODE=$MODE LOG_LEVEL=info cargo build --release 2>&1
+cd "$REPO/midi-tester"
+cargo build 2>&1
 
 echo "=== Flashing firmware ==="
-# probe-rs run exits on its own when the MCU hits bkpt()
-LOG_LEVEL=info probe-rs run --chip STM32F413CHUx \
+cd "$REPO/firmware"
+# The MCU stops itself 2 s after the last byte; the limit covers nothing arriving, in which case it never stops
+LOG_LEVEL=info "$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!

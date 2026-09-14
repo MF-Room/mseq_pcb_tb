@@ -26,6 +26,7 @@ T_END_MS=""
 BEAT_COUNT=0
 PRINT=1
 
+# The MCU stops itself after BEATS beats (about 25 s); the limit covers the RTC never ticking or a panic
 while IFS= read -r line; do
     if [[ "$line" == *"BEAT"* ]]; then
         BEAT_COUNT=$((BEAT_COUNT + 1))
@@ -36,8 +37,14 @@ while IFS= read -r line; do
     elif [[ $PRINT -eq 1 ]]; then
         echo "$line"
     fi
-done < <(MODE=bpm probe-rs run --chip STM32F413CHUx \
+done < <(MODE=bpm "$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware 2>/dev/null)
+
+if [[ $BEAT_COUNT -lt $BEATS ]]; then
+    echo ""
+    echo "FAIL (only $BEAT_COUNT of $BEATS beats received)"
+    exit 1
+fi
 
 # (BEATS-1) intervals between beat 1 and beat BEATS
 ELAPSED_MS=$(( T_END_MS - T_START_MS ))

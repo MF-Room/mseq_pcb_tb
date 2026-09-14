@@ -2,9 +2,10 @@
 # Tests flashing over USB without a debug probe: the STM32 ROM bootloader is entered with the
 # BOOT and RESET buttons, and stm32flash writes and verifies the firmware through the CP2102N (USART1).
 # Prints PASS if the STM32F413 is detected and the write verifies.
+# The serial device defaults to /dev/ttyUSB0 on Linux and the first /dev/cu.usbserial* on macOS.
 # Usage: SERIAL=/dev/ttyUSB0 ./test_usb_flash.sh
 set -euo pipefail
-SERIAL=${SERIAL:-/dev/ttyUSB0}
+SERIAL=${SERIAL:-}
 F413_ID="0x0463"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,6 +30,21 @@ echo "  1. hold BOOT"
 echo "  2. press and release RESET"
 echo "  3. release BOOT"
 read -rp "Press Enter when done: "
+
+# The device only exists once the cable is connected, so it is looked up after the prompt
+if [[ -z "$SERIAL" ]]; then
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # CP2102N with the built-in macOS driver (cu.usbserial-*) or the Silicon Labs one
+        SERIAL=$(ls /dev/cu.usbserial* /dev/cu.SLAB_USBtoUART* 2>/dev/null | head -n 1 || true)
+    else
+        SERIAL=/dev/ttyUSB0
+    fi
+fi
+if [[ -z "$SERIAL" || ! -e "$SERIAL" ]]; then
+    echo ""
+    echo "FAIL (serial device ${SERIAL:-not found}; set SERIAL=<device>)"
+    exit 1
+fi
 
 echo ""
 echo "=== Flashing over $SERIAL ==="

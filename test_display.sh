@@ -19,7 +19,8 @@ cd "$REPO/firmware"
 MODE=display cargo build --release
 
 echo "=== Flashing firmware ==="
-MODE=display probe-rs run --chip STM32F413CHUx \
+# The MCU stops itself once the number is shown; the limit covers a panic, which never does
+MODE=display "$REPO/with_timeout.sh" 30 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!
@@ -27,6 +28,12 @@ wait "$FW_PID" || true
 FW_PID=""
 
 EXPECTED=$(grep -oE 'Number: [0-9]+' "$FW_OUT" | grep -oE '[0-9]+' || true)
+if [[ -z "$EXPECTED" ]]; then
+    cat "$FW_OUT"
+    echo ""
+    echo "FAIL (firmware did not report a number)"
+    exit 1
+fi
 
 echo ""
 read -rp "Enter the number shown on the LCD: " USER_INPUT

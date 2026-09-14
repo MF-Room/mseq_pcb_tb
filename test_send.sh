@@ -32,7 +32,8 @@ HOST_PID=$!
 
 echo "=== Flashing and attaching RTT (send mode) ==="
 cd "$REPO/firmware"
-COUNT=$COUNT MODE=send probe-rs run --chip STM32F413CHUx \
+# The MCU stops itself after COUNT messages (about 5 s); the limit covers a panic, which never does
+COUNT=$COUNT MODE=send "$REPO/with_timeout.sh" 30 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!

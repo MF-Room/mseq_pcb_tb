@@ -19,7 +19,7 @@ echo "=== Flashing firmware ==="
 echo "When asked, flip the MASTER/SLAVE switch, then flip it back (30 s per flip)."
 echo ""
 # Output is shown live so the prompts are visible; the timeout covers a panic
-timeout 90 probe-rs run --chip STM32F413CHUx \
+"$REPO/with_timeout.sh" 90 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     2>/dev/null | tee "$FW_OUT" || true
 

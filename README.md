@@ -12,6 +12,7 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 - STLink connected to the target
 - USB-MIDI adapter connected to the host
 - `probe-rs`, `cargo`, and `flip-link` installed
+- Linux or macOS: the scripts use GNU `timeout` when it is installed and otherwise fall back to `perl`, which macOS ships
 - For the USB flashing test: USB-C cable to the board and `stm32flash` installed
 
 ## Tests
@@ -67,7 +68,7 @@ Both SPI memory tests run their full sequence at every SPI2 speed the MCU can ge
 ./test_switch.sh
 ```
 
-**USB flashing test** (CP2102N on USART1, BOOT and RESET buttons): the user enters the STM32 bootloader (hold BOOT, press RESET, release BOOT), then `stm32flash` writes and verifies the receive firmware over USB without the STLink. PASS if the STM32F413 is detected and the verify succeeds. Set `SERIAL=<device>` if the board is not `/dev/ttyUSB0`.
+**USB flashing test** (CP2102N on USART1, BOOT and RESET buttons): the user enters the STM32 bootloader (hold BOOT, press RESET, release BOOT), then `stm32flash` writes and verifies the receive firmware over USB without the STLink. PASS if the STM32F413 is detected and the verify succeeds. The board is `/dev/ttyUSB0` on Linux and the first `/dev/cu.usbserial*` on macOS; set `SERIAL=<device>` to override.
 
 ```
 ./test_usb_flash.sh

@@ -32,7 +32,7 @@ cargo build 2>&1
 echo "=== Flashing firmware ==="
 cd "$REPO/firmware"
 # The timeout covers IN 1 receiving nothing, in which case the firmware never stops
-LOG_LEVEL=info timeout 60 probe-rs run --chip STM32F413CHUx \
+LOG_LEVEL=info "$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!
