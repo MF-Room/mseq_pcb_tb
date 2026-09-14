@@ -3,6 +3,7 @@
 # both compute CRC32-ISO/HDLC. Prints PASS if they match.
 # Usage: ./test_receive.sh [1|2]   MIDI input under test (default 1). The host port wired to it comes from midi_ports.conf.
 set -euo pipefail
+command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
 COUNT=3000
 INPUT=${1:-1}
 
@@ -46,7 +47,7 @@ cargo build 2>&1
 echo "=== Flashing firmware ==="
 cd "$REPO/firmware"
 # The MCU stops itself 2 s after the last byte; the limit covers nothing arriving, in which case it never stops
-LOG_LEVEL=info "$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
+LOG_LEVEL=info timeout 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!

@@ -2,6 +2,7 @@
 # Tests the W25Q16JV NOR flash: firmware checks the JEDEC ID, erases, programs and verifies a sector.
 # Prints PASS if the firmware reports "NOR PASS". Destructive for the tested sector.
 set -euo pipefail
+command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FW_OUT=$(mktemp /tmp/fw_out.XXXXXX)
@@ -20,7 +21,7 @@ MODE=nor cargo build --release
 
 echo "=== Flashing firmware ==="
 # probe-rs run exits when the MCU hits bkpt(); the timeout covers a panic, which never does
-"$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
+timeout 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!

@@ -2,6 +2,7 @@
 # Tests BPM accuracy using LSE/RTC: firmware generates 50 beats at 100 BPM,
 # host measures elapsed wall-clock time between first and last beat RTT message.
 set -euo pipefail
+command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
 BEATS=50
 TARGET_BPM=120
 
@@ -37,7 +38,7 @@ while IFS= read -r line; do
     elif [[ $PRINT -eq 1 ]]; then
         echo "$line"
     fi
-done < <(MODE=bpm "$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
+done < <(MODE=bpm timeout 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware 2>/dev/null)
 
 if [[ $BEAT_COUNT -lt $BEATS ]]; then

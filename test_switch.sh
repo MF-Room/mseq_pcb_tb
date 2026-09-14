@@ -2,6 +2,7 @@
 # Tests the MASTER/SLAVE switch (SW3 on PA1): firmware logs the level, the user flips the
 # switch and back, and firmware checks both changes. Prints PASS if the firmware reports "SWITCH PASS".
 set -euo pipefail
+command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FW_OUT=$(mktemp /tmp/fw_out.XXXXXX)
@@ -19,7 +20,7 @@ echo "=== Flashing firmware ==="
 echo "When asked, flip the MASTER/SLAVE switch, then flip it back (30 s per flip)."
 echo ""
 # Output is shown live so the prompts are visible; the timeout covers a panic
-"$REPO/with_timeout.sh" 90 probe-rs run --chip STM32F413CHUx \
+timeout 90 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     2>/dev/null | tee "$FW_OUT" || true
 

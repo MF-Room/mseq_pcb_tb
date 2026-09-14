@@ -2,6 +2,7 @@
 # Tests the LCD display: firmware shows a random number, user reads it and types it here.
 # Prints PASS if the input matches.
 set -euo pipefail
+command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FW_OUT=$(mktemp /tmp/fw_out.XXXXXX)
@@ -20,7 +21,7 @@ MODE=display cargo build --release
 
 echo "=== Flashing firmware ==="
 # The MCU stops itself once the number is shown; the limit covers a panic, which never does
-MODE=display "$REPO/with_timeout.sh" 30 probe-rs run --chip STM32F413CHUx \
+MODE=display timeout 30 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!
