@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
-# Tests MCU send path: MCU sends COUNT MIDI messages, host receives on port PORT,
-# both compute CRC32-ISO/HDLC. Prints PASS if they match.
-# NOTE: currently expected to fail due to a PCB hardware issue on the TX path.
+# Tests MCU send path: MCU sends COUNT MIDI messages on MIDI OUT, host receives them,
+# both compute CRC32-ISO/HDLC. Prints PASS if they match. The host port wired to MIDI OUT comes from midi_ports.conf.
 set -euo pipefail
 COUNT=1000
-PORT=1
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Host MIDI ports, written by ./setup_midi_ports.sh
+if [[ ! -f "$REPO/midi_ports.conf" ]]; then
+    echo "$REPO/midi_ports.conf not found: run ./setup_midi_ports.sh to select the host MIDI ports" >&2
+    exit 2
+fi
+# shellcheck source=/dev/null
+source "$REPO/midi_ports.conf"
+: "${MIDI_OUT:?not set in midi_ports.conf, rerun ./setup_midi_ports.sh}"
+
 FW_OUT=$(mktemp /tmp/fw_out.XXXXXX)
 HOST_OUT=$(mktemp /tmp/host_out.XXXXXX)
 FW_PID=""
@@ -21,13 +29,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "=== Building firmware (send mode, COUNT=$COUNT) ==="
+echo "=== Building firmware (send mode, COUNT=$COUNT) and midi-tester ==="
 cd "$REPO/firmware"
 COUNT=$COUNT MODE=send cargo build --release
-
-echo "=== Starting host receiver (port $PORT) ==="
 cd "$REPO/midi-tester"
-cargo run -- receive --port "$PORT" > "$HOST_OUT" 2>&1 &
+cargo build 2>&1
+
+echo "=== Starting host receiver on MIDI OUT (host port '$MIDI_OUT') ==="
+cargo run -- receive --port "$MIDI_OUT" > "$HOST_OUT" 2>&1 &
 HOST_PID=$!
 
 echo "=== Flashing and attaching RTT (send mode) ==="
@@ -42,14 +51,14 @@ echo "=== Waiting for MCU to finish sending and probe-rs to exit ==="
 wait "$FW_PID" || true
 FW_PID=""
 
-# Give host a moment to flush the last messages, then stop it
-sleep 2
-kill "$HOST_PID" 2>/dev/null || true
-wait "$HOST_PID" 2>/dev/null || true
+# The receiver prints its CRC when its watchdog_ms (config.toml) deadline passes; killing it earlier loses it
+echo "=== Waiting for the host receiver watchdog ==="
+wait "$HOST_PID" || true
 HOST_PID=""
 
-FW_CRC=$(grep -oE '0x[0-9A-Fa-f]{8}' "$FW_OUT" | tail -1 || true)
-HOST_CRC=$(grep -oE '0x[0-9A-Fa-f]{8}' "$HOST_OUT" | tail -1 || true)
+# The CRC is on the firmware's own log line; probe-rs prints a backtrace with addresses after it
+FW_CRC=$(grep "firmware::send" "$FW_OUT" | grep -oE '0x[0-9A-Fa-f]{8}' | head -1 || true)
+HOST_CRC=$(grep "CRC32" "$HOST_OUT" | grep -oE '0x[0-9A-Fa-f]{8}' | tail -1 || true)
 
 echo ""
 echo "MCU  CRC : ${FW_CRC:-NOT FOUND}"
@@ -59,6 +68,6 @@ echo ""
 if [[ -n "$FW_CRC" && "$FW_CRC" == "$HOST_CRC" ]]; then
     echo "PASS"
 else
-    echo "FAIL (expected — PCB TX path issue)"
+    echo "FAIL"
     exit 1
 fi

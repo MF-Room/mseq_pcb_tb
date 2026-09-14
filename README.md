@@ -12,19 +12,20 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 - STLink connected to the target
 - USB-MIDI adapter connected to the host
 - `probe-rs`, `cargo`, and `flip-link` installed
+- For the MIDI tests: `./setup_midi_ports.sh` run once. It lists the host MIDI ports and asks which one is wired to each of the board's MIDI IN 1, IN 2, OUT and THRU, the same port possibly several times, and writes them to `midi_ports.conf` for the receive, send and THRU tests
 - Linux or macOS: the scripts use GNU `timeout` when it is installed and otherwise fall back to `perl`, which macOS ships
 - For the USB flashing test: USB-C cable to the board and `stm32flash` installed
 
 ## Tests
 
-**Receive test** (RX path): the host sends 3000 MIDI messages on port 0, the MCU receives them and computes a CRC32. Both CRCs are compared. The argument selects the input under test: `1` for MIDI IN 1 (USART1, PB3, default), `2` for MIDI IN 2 (USART2, PA3). Connect the adapter output to that input; set `PORT=<n>` to use another host port.
+**Receive test** (RX path): the host sends 3000 MIDI messages into the input under test, the MCU receives them and computes a CRC32. Both CRCs are compared. The argument selects the input under test: `1` for MIDI IN 1 (USART1, PB3, default), `2` for MIDI IN 2 (USART2, PA3).
 
 ```
 ./test_receive.sh      # MIDI IN 1
 ./test_receive.sh 2    # MIDI IN 2
 ```
 
-**Send test** (TX path): the MCU sends 1000 MIDI messages, the host receives them on port 1 and computes a CRC32. Both CRCs are compared. This test is expected to fail due to a hardware issue on the PCB TX path.
+**Send test** (TX path): the MCU sends 1000 MIDI messages, the host receives them from MIDI OUT and computes a CRC32. Both CRCs are compared.
 
 ```
 ./test_send.sh
@@ -56,7 +57,7 @@ Both SPI memory tests run their full sequence at every SPI2 speed the MCU can ge
 ./test_fram.sh
 ```
 
-**THRU test**: the host sends 1000 MIDI messages on output port 0 into MIDI IN 1, the PCB copies them in hardware to MIDI THRU, and the host receives them on input port 1. Both CRCs are compared. Connect the adapter input to MIDI THRU instead of MIDI OUT. The receive firmware is flashed first so the MCU pin on the IN 1 line is an input. Set `OUT_PORT=<n>` / `IN_PORT=<n>` to use other host ports.
+**THRU test**: the host sends 1000 MIDI messages into MIDI IN 1, the PCB copies them in hardware to MIDI THRU, and the host receives them from there. Both CRCs are compared. The receive firmware is flashed first so the MCU pin on the IN 1 line is an input.
 
 ```
 ./test_thru.sh

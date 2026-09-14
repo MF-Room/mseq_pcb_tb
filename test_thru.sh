@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
-# Tests MIDI THRU: host sends COUNT MIDI messages on output port OUT_PORT into MIDI IN 1,
-# the PCB copies them in hardware to MIDI THRU, and the host receives them on input port IN_PORT.
-# Both sides compute CRC32-ISO/HDLC. Prints PASS if they match.
+# Tests MIDI THRU: host sends COUNT MIDI messages into MIDI IN 1, the PCB copies them in hardware
+# to MIDI THRU, and the host receives them from there. Both sides compute CRC32-ISO/HDLC.
+# Prints PASS if they match. The host ports wired to IN 1 and THRU come from midi_ports.conf.
 # The receive firmware is flashed first so PB3, which shares the IN 1 line with THRU, is an input.
 set -euo pipefail
 COUNT=1000
-OUT_PORT=${OUT_PORT:-0}
-IN_PORT=${IN_PORT:-1}
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Host MIDI ports, written by ./setup_midi_ports.sh
+if [[ ! -f "$REPO/midi_ports.conf" ]]; then
+    echo "$REPO/midi_ports.conf not found: run ./setup_midi_ports.sh to select the host MIDI ports" >&2
+    exit 2
+fi
+# shellcheck source=/dev/null
+source "$REPO/midi_ports.conf"
+: "${MIDI_IN1:?not set in midi_ports.conf, rerun ./setup_midi_ports.sh}"
+: "${MIDI_THRU:?not set in midi_ports.conf, rerun ./setup_midi_ports.sh}"
+
 FW_OUT=$(mktemp /tmp/fw_out.XXXXXX)
 HOST_OUT=$(mktemp /tmp/host_out.XXXXXX)
 FW_PID=""
@@ -38,15 +47,15 @@ LOG_LEVEL=info "$REPO/with_timeout.sh" 60 probe-rs run --chip STM32F413CHUx \
 FW_PID=$!
 sleep 8   # covers flash + probe init
 
-echo "=== Starting host receiver on THRU (port $IN_PORT) ==="
+echo "=== Starting host receiver on MIDI THRU (host port '$MIDI_THRU') ==="
 cd "$REPO/midi-tester"
 # Stops on its own after watchdog_ms (config.toml), which covers COUNT x interval_ms
-cargo run -- receive --port "$IN_PORT" > "$HOST_OUT" 2>&1 &
+cargo run -- receive --port "$MIDI_THRU" > "$HOST_OUT" 2>&1 &
 HOST_PID=$!
 sleep 1
 
-echo "=== Sending MIDI messages into IN 1 (port $OUT_PORT, count $COUNT) ==="
-SENT_CRC=$(cargo run -- send --count "$COUNT" --port "$OUT_PORT" 2>/dev/null | grep -oE '0x[0-9A-Fa-f]{8}' || true)
+echo "=== Sending MIDI messages into MIDI IN 1 (host port '$MIDI_IN1', count $COUNT) ==="
+SENT_CRC=$(cargo run -- send --count "$COUNT" --port "$MIDI_IN1" 2>/dev/null | grep -oE '0x[0-9A-Fa-f]{8}' || true)
 
 echo "=== Waiting for the host receiver watchdog ==="
 wait "$HOST_PID" || true
@@ -54,7 +63,7 @@ HOST_PID=""
 wait "$FW_PID" || true
 FW_PID=""
 
-THRU_CRC=$(grep -oE '0x[0-9A-Fa-f]{8}' "$HOST_OUT" | tail -1 || true)
+THRU_CRC=$(grep "CRC32" "$HOST_OUT" | grep -oE '0x[0-9A-Fa-f]{8}' | tail -1 || true)
 
 echo ""
 echo "Sent CRC : ${SENT_CRC:-NOT FOUND}"
