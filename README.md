@@ -41,13 +41,15 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 ./test_bpm.sh
 ```
 
+Both SPI memory tests run their full sequence at every SPI2 speed the MCU can generate, 3.125, 6.25, 12.5 and 25 MHz (APB1 50 MHz divided by 16, 8, 4 and 2; 25 MHz is the maximum), with a different data pattern each time. The log ends with one OK/FAIL line per speed, and the test passes only if every speed passes.
+
 **NOR flash test** (W25Q16JV on SPI2, CS on PB12): the MCU checks the JEDEC ID, erases the last 4 KB sector, checks it is blank, programs a pseudo-random pattern and reads it back. Destructive: the sector content is lost. No USB-MIDI adapter needed.
 
 ```
 ./test_nor.sh
 ```
 
-**FRAM test** (MB85RS256B on SPI2, CS on PB10): the MCU checks the write enable latch toggles, writes a pseudo-random pattern over the whole 32 KB and reads it back, checks every address line for aliasing, and checks a write without write enable is ignored. Destructive: the whole memory is overwritten. No USB-MIDI adapter needed.
+**FRAM test** (MB85RS256B on SPI2, CS on PB10): the MCU checks the device ID (`04 7F 05 09`) and that the write enable latch toggles, writes a pseudo-random pattern over the whole 32 KB and reads it back with both READ (rated up to 25 MHz) and FSTRD (fast read, rated up to 33 MHz), checks every address line for aliasing, and checks a write without write enable is ignored. Destructive: the whole memory is overwritten. No USB-MIDI adapter needed.
 
 ```
 ./test_fram.sh

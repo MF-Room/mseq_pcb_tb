@@ -4,13 +4,18 @@ use log::{error, info};
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use stm32f4xx_hal::{pac, rcc::Rcc};
 
-// MB85RS256B commands (no RDID on this part)
+// MB85RS256B commands (datasheet DS501-00021)
 const WRITE_ENABLE: u8 = 0x06;
 const WRITE_DISABLE: u8 = 0x04;
 const READ_STATUS: u8 = 0x05;
 const WRITE_STATUS: u8 = 0x01;
 const READ: u8 = 0x03;
+const FAST_READ: u8 = 0x0B;
 const WRITE: u8 = 0x02;
+const READ_ID: u8 = 0x9F;
+
+/// Fujitsu manufacturer ID, continuation code, then the two product ID bytes.
+const DEVICE_ID: [u8; 4] = [0x04, 0x7F, 0x05, 0x09];
 
 const STATUS_WEL: u8 = 0x02;
 /// BP0 and BP1 block protection bits.
@@ -22,20 +27,66 @@ const CHUNK_LEN: usize = 1024;
 const SEED: u64 = 42;
 static CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
-pub fn run(spi2: pac::SPI2, gpiob: pac::GPIOB, rcc: &mut Rcc) -> ! {
-    let (spi, _cs_nor, cs_fram) = spi_bus::init(spi2, gpiob, rcc);
-    let mut fram = Device::new(spi, cs_fram);
-    info!("FRAM test: MB85RS256B, {} bytes", FRAM_LEN);
-    spi_bus::finish("FRAM", test(&mut fram));
+/// READ is rated up to 25 MHz and every other command, FSTRD included, up to 33 MHz,
+/// so the pattern is verified with both.
+#[derive(Clone, Copy)]
+enum ReadCmd {
+    Read,
+    FastRead,
 }
 
-fn test(fram: &mut Device) -> Result<(), ()> {
-    // The chip has no ID register, so toggling the write enable latch is the presence check.
+impl ReadCmd {
+    fn name(self) -> &'static str {
+        match self {
+            ReadCmd::Read => "READ",
+            ReadCmd::FastRead => "FSTRD",
+        }
+    }
+
+    fn read(self, fram: &mut Device, addr: usize, buf: &mut [u8]) {
+        match self {
+            ReadCmd::Read => fram.read(&addr_cmd(READ, addr), buf),
+            // FSTRD takes one dummy byte after the address
+            ReadCmd::FastRead => {
+                let [cmd, a1, a0] = addr_cmd(FAST_READ, addr);
+                fram.read(&[cmd, a1, a0, 0x00], buf)
+            }
+        }
+    }
+}
+
+pub fn run(spi2: pac::SPI2, gpiob: pac::GPIOB, rcc: &mut Rcc) -> ! {
+    let (spi, _cs_nor, cs_fram) = spi_bus::init(spi2, gpiob, rcc);
+    let fram = Device::new(spi, cs_fram);
+    info!("FRAM test: MB85RS256B, {} bytes", FRAM_LEN);
+    spi_bus::run_speeds("FRAM", fram, rcc, test);
+}
+
+/// Full check at the current SPI speed. The pattern seed changes with `run` so data
+/// left by a previous speed cannot pass the verify.
+fn test(fram: &mut Device, run: u64) -> Result<(), ()> {
+    check_id(fram)?;
     check_write_latch(fram)?;
     clear_protection(fram)?;
-    full_pattern(fram)?;
+    write_pattern(fram, SEED + run);
+    verify_pattern(fram, SEED + run, ReadCmd::Read)?;
+    verify_pattern(fram, SEED + run, ReadCmd::FastRead)?;
     address_lines(fram)?;
     write_protect(fram)
+}
+
+fn check_id(fram: &mut Device) -> Result<(), ()> {
+    let mut id = [0u8; 4];
+    fram.read(&[READ_ID], &mut id);
+    info!(
+        "Device ID: {:02X} {:02X} {:02X} {:02X}",
+        id[0], id[1], id[2], id[3]
+    );
+    if id != DEVICE_ID {
+        error!("Unexpected device ID, expected 04 7F 05 09");
+        return Err(());
+    }
+    Ok(())
 }
 
 fn check_write_latch(fram: &mut Device) -> Result<(), ()> {
@@ -72,12 +123,11 @@ fn clear_protection(fram: &mut Device) -> Result<(), ()> {
     Ok(())
 }
 
-/// Writes a pseudo-random pattern over the whole memory, then reads it back.
-/// The pattern is regenerated from the seed to avoid holding 32 KB in RAM.
-fn full_pattern(fram: &mut Device) -> Result<(), ()> {
+/// Writes a pseudo-random pattern over the whole memory.
+/// The pattern is regenerated from the seed when verifying, to avoid holding 32 KB in RAM.
+fn write_pattern(fram: &mut Device, seed: u64) {
+    let mut rng = SmallRng::seed_from_u64(seed);
     let mut chunk = [0u8; CHUNK_LEN];
-
-    let mut rng = SmallRng::seed_from_u64(SEED);
     let mut digest = CRC32.digest();
     for addr in (0..FRAM_LEN).step_by(CHUNK_LEN) {
         chunk.iter_mut().for_each(|b| *b = rng.random());
@@ -87,17 +137,21 @@ fn full_pattern(fram: &mut Device) -> Result<(), ()> {
         fram.write(&addr_cmd(WRITE, addr), &chunk);
     }
     info!("Write OK ({:#010X})", digest.finalize());
+}
 
-    let mut rng = SmallRng::seed_from_u64(SEED);
+fn verify_pattern(fram: &mut Device, seed: u64, cmd: ReadCmd) -> Result<(), ()> {
+    let mut rng = SmallRng::seed_from_u64(seed);
     let mut expected = [0u8; CHUNK_LEN];
+    let mut chunk = [0u8; CHUNK_LEN];
     let mut digest = CRC32.digest();
     for addr in (0..FRAM_LEN).step_by(CHUNK_LEN) {
         expected.iter_mut().for_each(|b| *b = rng.random());
-        fram.read(&addr_cmd(READ, addr), &mut chunk);
+        cmd.read(fram, addr, &mut chunk);
         digest.update(&chunk);
         if let Some(i) = spi_bus::first_mismatch(&chunk, &expected) {
             error!(
-                "Verify: {:#06X} reads {:#04X}, expected {:#04X}",
+                "Verify with {}: {:#06X} reads {:#04X}, expected {:#04X}",
+                cmd.name(),
                 addr + i,
                 chunk[i],
                 expected[i]
@@ -105,7 +159,11 @@ fn full_pattern(fram: &mut Device) -> Result<(), ()> {
             return Err(());
         }
     }
-    info!("Verify OK ({:#010X})", digest.finalize());
+    info!(
+        "Verify with {} OK ({:#010X})",
+        cmd.name(),
+        digest.finalize()
+    );
     Ok(())
 }
 
