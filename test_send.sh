@@ -3,7 +3,7 @@
 # both compute CRC32-ISO/HDLC. Prints PASS if they match. The host port wired to MIDI OUT comes from midi_ports.conf.
 set -euo pipefail
 command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
-COUNT=1000
+COUNT=3000
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -42,8 +42,8 @@ HOST_PID=$!
 
 echo "=== Flashing and attaching RTT (send mode) ==="
 cd "$REPO/firmware"
-# The MCU stops itself after COUNT messages (about 5 s); the limit covers a panic, which never does
-COUNT=$COUNT MODE=send timeout 30 probe-rs run --chip STM32F413CHUx \
+# The MCU stops itself after COUNT messages (about 15 s); the limit covers a panic, which never does
+COUNT=$COUNT MODE=send timeout 60 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!

@@ -5,7 +5,7 @@
 # The receive firmware is flashed first so PB3, which shares the IN 1 line with THRU, is an input.
 set -euo pipefail
 command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
-COUNT=1000
+COUNT=3000
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -42,7 +42,7 @@ cargo build --release 2>&1
 echo "=== Flashing firmware ==="
 cd "$REPO/firmware"
 # The timeout covers IN 1 receiving nothing, in which case the firmware never stops
-LOG_LEVEL=info timeout 60 probe-rs run --chip STM32F413CHUx \
+LOG_LEVEL=info timeout 90 probe-rs run --chip STM32F413CHUx \
     target/thumbv7em-none-eabihf/release/firmware \
     > "$FW_OUT" 2>/dev/null &
 FW_PID=$!

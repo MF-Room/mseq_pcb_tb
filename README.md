@@ -25,7 +25,7 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 ./test_receive.sh 2    # MIDI IN 2
 ```
 
-**Send test** (TX path): the MCU sends 1000 MIDI messages, the host receives them from MIDI OUT and computes a CRC32. Both CRCs are compared.
+**Send test** (TX path): the MCU sends 3000 MIDI messages, the host receives them from MIDI OUT and computes a CRC32. Both CRCs are compared.
 
 ```
 ./test_send.sh
@@ -57,7 +57,7 @@ Both SPI memory tests run their full sequence at every SPI2 speed the MCU can ge
 ./test_fram.sh
 ```
 
-**THRU test**: the host sends 1000 MIDI messages into MIDI IN 1, the PCB copies them in hardware to MIDI THRU, and the host receives them from there. Both CRCs are compared. The receive firmware is flashed first so the MCU pin on the IN 1 line is an input.
+**THRU test**: the host sends 3000 MIDI messages into MIDI IN 1, the PCB copies them in hardware to MIDI THRU, and the host receives them from there. Both CRCs are compared. The receive firmware is flashed first so the MCU pin on the IN 1 line is an input.
 
 ```
 ./test_thru.sh
