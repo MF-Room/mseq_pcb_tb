@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Tests flashing over USB without a debug probe: the STM32 ROM bootloader is entered with the
-# BOOT and RESET buttons, and stm32flash writes and verifies the firmware through the CP2102N (USART1).
-# Prints PASS if the STM32F413 is detected and the write verifies.
+# Tests flashing over USB without a debug probe: after a power cycle, the STM32 ROM bootloader is
+# entered with the BOOT and RESET buttons, and stm32flash writes and verifies the firmware through
+# the CP2102N (USART1). Prints PASS if the STM32F413 is detected and the write verifies.
 # The serial device defaults to /dev/ttyUSB0 on Linux and the first /dev/cu.usbserial* on macOS.
 # Usage: SERIAL=/dev/ttyUSB0 ./test_usb_flash.sh
 set -euo pipefail
@@ -24,11 +24,17 @@ cargo build --release
 OBJCOPY="$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin/rust-objcopy"
 "$OBJCOPY" -O binary target/thumbv7em-none-eabihf/release/firmware "$BIN"
 
+# The power cycle is required: a preceding probe-rs test leaves the core with halting debug enabled
+# and the reset vector catch armed (DHCSR.C_DEBUGEN, DEMCR.VC_CORERESET). Both survive the RESET
+# button, which is only a system reset, so BOOT+RESET would halt the core on the bootloader's first
+# instruction and stm32flash would time out. Only a power-on reset clears them. USB-C VBUS powers
+# the board through SW2, so unplugging the cable or switching SW2 off is a power-on reset.
 echo ""
-echo "Connect the USB-C cable, then enter the bootloader:"
-echo "  1. hold BOOT"
-echo "  2. press and release RESET"
-echo "  3. release BOOT"
+echo "Power-cycle the board, then enter the bootloader:"
+echo "  1. unplug the USB-C cable (or switch SW2 off), wait 2 s, plug it back in (switch SW2 on)"
+echo "  2. hold BOOT"
+echo "  3. press and release RESET"
+echo "  4. release BOOT"
 read -rp "Press Enter when done: "
 
 # The device only exists once the cable is connected, so it is looked up after the prompt

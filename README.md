@@ -69,7 +69,7 @@ Both SPI memory tests run their full sequence at every SPI2 speed the MCU can ge
 ./test_switch.sh
 ```
 
-**USB flashing test** (CP2102N on USART1, BOOT and RESET buttons): the user enters the STM32 bootloader (hold BOOT, press RESET, release BOOT), then `stm32flash` writes and verifies the receive firmware over USB without the STLink. PASS if the STM32F413 is detected and the verify succeeds. The board is `/dev/ttyUSB0` on Linux and the first `/dev/cu.usbserial*` on macOS; set `SERIAL=<device>` to override.
+**USB flashing test** (CP2102N on USART1, BOOT and RESET buttons): the user power-cycles the board (unplug the USB-C cable or switch SW2 off and on), enters the STM32 bootloader (hold BOOT, press RESET, release BOOT), then `stm32flash` writes and verifies the receive firmware over USB without the STLink. The power cycle is required because a preceding probe-rs test leaves the core set to halt on reset, which the RESET button alone does not clear. PASS if the STM32F413 is detected and the verify succeeds. The board is `/dev/ttyUSB0` on Linux and the first `/dev/cu.usbserial*` on macOS; set `SERIAL=<device>` to override.
 
 ```
 ./test_usb_flash.sh
