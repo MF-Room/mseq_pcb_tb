@@ -35,7 +35,8 @@ enum Command {
         #[arg(long)]
         port: String,
     },
-    /// Receive MIDI messages and print the CRC32 of received bytes
+    /// Receive MIDI messages and print the CRC32 of the received channel message bytes
+    /// (System Real-Time, System Common and SysEx are ignored, as on the firmware)
     Receive {
         /// MIDI input port, by name or index (see `list`)
         #[arg(long)]
@@ -50,7 +51,7 @@ fn load_config() -> Result<Config> {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let crc = match cli.command {
+    let (crc, bytes) = match cli.command {
         Command::List { input, output } => {
             let both = input == output;
             if output || both {
@@ -83,6 +84,6 @@ fn main() -> Result<()> {
         }
     };
 
-    println!("CRC32: {:#010X}", crc);
+    println!("CRC32: {crc:#010X} ({bytes} bytes)");
     Ok(())
 }
