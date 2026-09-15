@@ -42,7 +42,7 @@ echo "=== Building firmware (receive mode, MIDI IN $INPUT) and midi-tester ==="
 cd "$REPO/firmware"
 MODE=$MODE LOG_LEVEL=info cargo build --release 2>&1
 cd "$REPO/midi-tester"
-cargo build 2>&1
+cargo build --release 2>&1
 
 echo "=== Flashing firmware ==="
 cd "$REPO/firmware"
@@ -56,7 +56,7 @@ sleep 8   # covers flash + probe init
 echo ""
 echo "=== Sending MIDI messages into MIDI IN $INPUT (host port '$HOST_PORT', count $COUNT) ==="
 cd "$REPO/midi-tester"
-HOST_CRC=$(cargo run -- send --count "$COUNT" --port "$HOST_PORT" 2>/dev/null | grep -oE '0x[0-9A-Fa-f]{8}' || true)
+HOST_CRC=$(cargo run --release -- send --count "$COUNT" --port "$HOST_PORT" 2>/dev/null | grep -oE '0x[0-9A-Fa-f]{8}' || true)
 
 echo "=== Waiting for MCU watchdog to fire and probe-rs to exit ==="
 wait "$FW_PID" || true

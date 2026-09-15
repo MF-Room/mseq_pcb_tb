@@ -10,8 +10,8 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONF="$REPO/midi_ports.conf"
 
 cd "$REPO/midi-tester"
-cargo build -q 2>&1
-MT=target/debug/midi-tester
+cargo build --release 2>&1
+MT=target/release/midi-tester
 
 # Prints the ports of one direction, asks for one and prints its name on stdout.
 # $1: input|output   $2: what the port is wired to

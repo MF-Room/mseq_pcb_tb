@@ -37,7 +37,7 @@ echo "=== Building firmware (receive mode) and midi-tester ==="
 cd "$REPO/firmware"
 LOG_LEVEL=info cargo build --release 2>&1
 cd "$REPO/midi-tester"
-cargo build 2>&1
+cargo build --release 2>&1
 
 echo "=== Flashing firmware ==="
 cd "$REPO/firmware"
@@ -51,12 +51,12 @@ sleep 8   # covers flash + probe init
 echo "=== Starting host receiver on MIDI THRU (host port '$MIDI_THRU') ==="
 cd "$REPO/midi-tester"
 # Stops on its own after watchdog_ms (config.toml), which covers COUNT x interval_ms
-cargo run -- receive --port "$MIDI_THRU" > "$HOST_OUT" 2>&1 &
+cargo run --release -- receive --port "$MIDI_THRU" > "$HOST_OUT" 2>&1 &
 HOST_PID=$!
 sleep 1
 
 echo "=== Sending MIDI messages into MIDI IN 1 (host port '$MIDI_IN1', count $COUNT) ==="
-SENT_CRC=$(cargo run -- send --count "$COUNT" --port "$MIDI_IN1" 2>/dev/null | grep -oE '0x[0-9A-Fa-f]{8}' || true)
+SENT_CRC=$(cargo run --release -- send --count "$COUNT" --port "$MIDI_IN1" 2>/dev/null | grep -oE '0x[0-9A-Fa-f]{8}' || true)
 
 echo "=== Waiting for the host receiver watchdog ==="
 wait "$HOST_PID" || true

@@ -34,10 +34,10 @@ echo "=== Building firmware (send mode, COUNT=$COUNT) and midi-tester ==="
 cd "$REPO/firmware"
 COUNT=$COUNT MODE=send cargo build --release
 cd "$REPO/midi-tester"
-cargo build 2>&1
+cargo build --release 2>&1
 
 echo "=== Starting host receiver on MIDI OUT (host port '$MIDI_OUT') ==="
-cargo run -- receive --port "$MIDI_OUT" > "$HOST_OUT" 2>&1 &
+cargo run --release -- receive --port "$MIDI_OUT" > "$HOST_OUT" 2>&1 &
 HOST_PID=$!
 
 echo "=== Flashing and attaching RTT (send mode) ==="
