@@ -5,11 +5,22 @@
 mod bpm;
 #[cfg(display_mode)]
 mod display;
-#[cfg(not(any(bpm_mode, display_mode, send_mode)))]
+#[cfg(fram_mode)]
+mod fram;
+#[cfg(nor_mode)]
+mod nor;
+#[cfg(any(
+    receive2_mode,
+    not(any(bpm_mode, display_mode, send_mode, nor_mode, fram_mode, switch_mode))
+))]
 mod receive;
 mod rtt_logger;
 #[cfg(send_mode)]
 mod send;
+#[cfg(any(nor_mode, fram_mode))]
+mod spi_bus;
+#[cfg(switch_mode)]
+mod switch;
 
 use panic_rtt_target as _;
 use rtt_logger::{LOG_LEVEL, RttLogger};
@@ -37,11 +48,31 @@ fn main() -> ! {
     bpm::run(dp.RTC, dp.PWR, &mut rcc);
 
     #[cfg(display_mode)]
-    display::run(dp.I2C1, dp.GPIOB, dp.TIM3, &mut rcc);
+    display::run(dp.I2C1, dp.GPIOB, &mut rcc);
 
     #[cfg(send_mode)]
     send::run(dp.USART1, dp.GPIOA, dp.GPIOB, &mut rcc);
 
-    #[cfg(not(any(bpm_mode, display_mode, send_mode)))]
+    #[cfg(nor_mode)]
+    nor::run(dp.SPI2, dp.GPIOB, &mut rcc);
+
+    #[cfg(fram_mode)]
+    fram::run(dp.SPI2, dp.GPIOB, &mut rcc);
+
+    #[cfg(receive2_mode)]
+    receive::run_in2(dp.USART2, dp.GPIOA, &mut rcc);
+
+    #[cfg(switch_mode)]
+    switch::run(dp.GPIOA, &mut rcc);
+
+    #[cfg(not(any(
+        bpm_mode,
+        display_mode,
+        send_mode,
+        nor_mode,
+        fram_mode,
+        receive2_mode,
+        switch_mode
+    )))]
     receive::run(dp.USART1, dp.GPIOA, dp.GPIOB, &mut rcc);
 }
