@@ -31,7 +31,7 @@ The `firmware` runs on the target and `midi-tester` drives a USB-MIDI adapter fr
 ./test_send.sh
 ```
 
-**Display test**: the MCU generates a random number and shows it on the LCD. The user reads it and types it in the terminal. PASS if it matches.
+**Display test** (HS242L03B2C01 OLED, SSD1309 on I2C1, header J1): the MCU generates a random number and shows it in large digits. The user reads it and types it in the terminal. PASS if it matches. The firmware first checks both I2C lines idle high and that the display answers at 0x3C or 0x3D, and logs which check failed. The module pinout is GND, VCC, SCL, SDA while J1 is SCL, SDA, 3.3 V, GND, so the module must be wired pin by pin by signal name, not plugged in straight.
 
 ```
 ./test_display.sh

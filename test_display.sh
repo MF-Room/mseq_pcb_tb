@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Tests the LCD display: firmware shows a random number, user reads it and types it here.
-# Prints PASS if the input matches.
+# Tests the OLED display (HS242L03B2C01, SSD1309 on I2C): firmware shows a random number, user reads it
+# and types it here. Prints PASS if the input matches.
 set -euo pipefail
 command -v timeout >/dev/null || { echo "timeout not found: install GNU coreutils (macOS: brew install coreutils)" >&2; exit 2; }
 
@@ -37,7 +37,7 @@ if [[ -z "$EXPECTED" ]]; then
 fi
 
 echo ""
-read -rp "Enter the number shown on the LCD: " USER_INPUT
+read -rp "Enter the number shown on the display: " USER_INPUT
 
 echo ""
 if [[ "$USER_INPUT" == "$EXPECTED" ]]; then

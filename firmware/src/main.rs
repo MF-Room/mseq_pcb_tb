@@ -48,7 +48,7 @@ fn main() -> ! {
     bpm::run(dp.RTC, dp.PWR, &mut rcc);
 
     #[cfg(display_mode)]
-    display::run(dp.I2C1, dp.GPIOB, dp.TIM3, &mut rcc);
+    display::run(dp.I2C1, dp.GPIOB, &mut rcc);
 
     #[cfg(send_mode)]
     send::run(dp.USART1, dp.GPIOA, dp.GPIOB, &mut rcc);
